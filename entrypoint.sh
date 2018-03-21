@@ -4,12 +4,50 @@
 export AZURE_DNS="$1"
 export NBITCOIN_NETWORK="$2"
 export LETSENCRYPT_EMAIL="$3"
-export SUPPORTED_CRYPTO_CURRENCIES="$4"
-export BTCPAY_DOCKER_REPO="$5"
-export BTCPAY_DOCKER_REPO_BRANCH="$6"
+export BTCPAY_DOCKER_REPO="$4"
+export BTCPAY_DOCKER_REPO_BRANCH="$5"
+export LIGHTNING_ALIAS="$6"
+export USE_BTC="$7"
+export USE_LTC="$8"
+export USE_CLIGHTNING="$9"
+
+echo ""
+echo "-------SETUP-----------"
+echo "Parameters passed:"
+echo "AZURE_DNS:$AZURE_DNS"
+echo "NBITCOIN_NETWORK:$NBITCOIN_NETWORK"
+echo "LETSENCRYPT_EMAIL:$LETSENCRYPT_EMAIL"
+echo "BTCPAY_DOCKER_REPO:$BTCPAY_DOCKER_REPO"
+echo "BTCPAY_DOCKER_REPO_BRANCH:$BTCPAY_DOCKER_REPO_BRANCH"
+echo "LIGHTNING_ALIAS:$LIGHTNING_ALIAS"
+echo "USE_BTC:$USE_BTC"
+echo "USE_LTC:$USE_LTC"
+echo "USE_CLIGHTNING:$USE_CLIGHTNING"
+echo "----------------------"
+echo ""
 
 export DOWNLOAD_ROOT="`pwd`"
 export BTCPAY_ENV_FILE="`pwd`/.env"
+export SUPPORTED_CRYPTO_CURRENCIES=""
+
+if [ "$USE_BTC" == "True" ]; then
+    SUPPORTED_CRYPTO_CURRENCIES="$SUPPORTED_CRYPTO_CURRENCIES-btc"
+fi
+
+if [ "$USE_LTC" == "True" ]; then
+    SUPPORTED_CRYPTO_CURRENCIES="$SUPPORTED_CRYPTO_CURRENCIES-ltc"
+fi
+
+if [ "$SUPPORTED_CRYPTO_CURRENCIES" == "" ]; then
+    SUPPORTED_CRYPTO_CURRENCIES="-btc"
+fi
+
+if [ "$USE_CLIGHTNING" == "True" ]; then
+    SUPPORTED_CRYPTO_CURRENCIES="$SUPPORTED_CRYPTO_CURRENCIES-clightning"
+fi
+
+# Remove superflous -
+SUPPORTED_CRYPTO_CURRENCIES=`echo $SUPPORTED_CRYPTO_CURRENCIES | sed 's/^-\(.*\)/\1/'`
 
 export BTCPAY_HOST="$AZURE_DNS"
 export BTCPAY_DOCKER_COMPOSE="`pwd`/btcpayserver-docker/Production/docker-compose.$SUPPORTED_CRYPTO_CURRENCIES.yml"
@@ -90,13 +128,12 @@ echo "BTCPAY_HOST=$BTCPAY_HOST" >> $BTCPAY_ENV_FILE
 echo "ACME_CA_URI=$ACME_CA_URI" >> $BTCPAY_ENV_FILE
 echo "NBITCOIN_NETWORK=$NBITCOIN_NETWORK" >> $BTCPAY_ENV_FILE
 echo "LETSENCRYPT_EMAIL=$LETSENCRYPT_EMAIL" >> $BTCPAY_ENV_FILE
+echo "LIGHTNING_ALIAS=$LIGHTNING_ALIAS" >> $BTCPAY_ENV_FILE
 
 cd "`dirname $BTCPAY_ENV_FILE`"
 docker-compose -f "$BTCPAY_DOCKER_COMPOSE" up -d 
 
-chmod +x changedomain.sh
-chmod +x btcpay-restart.sh
-chmod +x btcpay-update.sh
-ln -s `pwd`/changedomain.sh /usr/bin/changedomain.sh
-ln -s `pwd`/btcpay-restart.sh /usr/bin/btcpay-restart.sh
-ln -s `pwd`/btcpay-update.sh /usr/bin/btcpay-update.sh
+find `pwd` -name "*.sh" -exec chmod +x {} \;
+find `pwd` -name "*.sh" -exec ln -s {} /usr/bin \;
+find `pwd`/btcpayserver-docker -name "*.sh" -exec chmod +x {} \;
+find `pwd`/btcpayserver-docker -name "*.sh" -exec ln -s {} /usr/bin \;

@@ -41,15 +41,32 @@
           "description": "Choose nainnet for production, or testnet for testing"
         }
       },
-      "cryptoCurrencies": {
-        "type": "string",
-        "allowedValues": [
-          "btc",
-          "btc-ltc"
-        ],
-        "defaultValue": "btc-ltc",
+      "acceptBTC": {
+        "type": "bool",
+        "defaultValue": true,
         "metadata": {
-          "description": "Supported cryptocurrencies"
+          "description": "Accept Bitcoin"
+        }
+      },
+      "acceptLTC": {
+        "type": "bool",
+        "defaultValue": false,
+        "metadata": {
+          "description": "Accept Litecoin"
+        }
+      },
+      "internalCLightning": {
+        "type": "bool",
+        "defaultValue": false,
+        "metadata": {
+          "description": "Support internal clightning node (beta)"
+        }
+      },
+      "lightningNodeAlias": {
+        "type": "string",
+        "defaultValue": "",
+        "metadata": {
+          "description": "Public alias of your lightning node (Optional)"
         }
       },
       "ubuntuOSVersion": {
@@ -221,6 +238,34 @@
                 "priority": 102,
                 "direction": "Inbound"
               }
+            },
+            {
+              "name": "LightningBTC",
+              "properties": {
+                "description": "Allow inbound Lighning Network access (BTC)",
+                "protocol": "Tcp",
+                "sourcePortRange": "*",
+                "destinationPortRange": "9735",
+                "sourceAddressPrefix": "Internet",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 103,
+                "direction": "Inbound"
+              }
+            },
+            {
+              "name": "LightningLTC",
+              "properties": {
+                "description": "Allow inbound Lighning Network access (LTC)",
+                "protocol": "Tcp",
+                "sourcePortRange": "*",
+                "destinationPortRange": "9736",
+                "sourceAddressPrefix": "Internet",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 104,
+                "direction": "Inbound"
+              }
             }
           ]
         }
@@ -288,7 +333,7 @@
                             "https://raw.githubusercontent.com/btcpayserver/btcpayserver-azure/master/changedomain.sh",
                             "https://raw.githubusercontent.com/btcpayserver/btcpayserver-azure/master/btcpay-restart.sh",
                             "https://raw.githubusercontent.com/btcpayserver/btcpayserver-azure/master/btcpay-update.sh"],
-              "commandToExecute" : "[concat('./entrypoint.sh ', reference(concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName')), '2016-03-30').dnsSettings.fqdn, ' ', parameters('network'), ' ', parameters('notificationEmail'), ' ', parameters('cryptoCurrencies'),' ', parameters('repository'), ' ', parameters('branch'))]"
+              "commandToExecute" : "[concat('./entrypoint.sh ', reference(concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName')), '2016-03-30').dnsSettings.fqdn, ' ', parameters('network'), ' ', parameters('notificationEmail'), ' ', parameters('repository'), ' ', parameters('branch'), ' \"', parameters('lightningNodeAlias'), '\" ', parameters('acceptBTC'), ' ', parameters('acceptLTC'), ' ', parameters('internalCLightning'))]"
           }
         }
       }
@@ -301,6 +346,10 @@
         "server-azure-dns" : {
             "type": "string",
             "value": "[reference(concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName')), '2016-03-30').dnsSettings.fqdn]"
+        },
+        "ssh-commandline" : {
+          "type": "string",
+          "value": "[concat('ssh', ' ', parameters('adminUsername'), '@', reference(concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName')), '2016-03-30').dnsSettings.fqdn)]"
         },
         "server-url" : {
             "type": "string",
